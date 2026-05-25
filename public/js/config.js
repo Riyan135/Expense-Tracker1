@@ -38,13 +38,16 @@ async function apiFetch(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      // Auto logout on 401 Unauthorized or 403 Deactivated
-      if (response.status === 401) {
+      // Do not auto-logout on auth endpoints
+      const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/admin/login') || endpoint.includes('/auth/register');
+
+      // Auto logout on 401 Unauthorized or 403 Deactivated, but NOT during login
+      if (response.status === 401 && !isAuthEndpoint) {
         logout();
         return;
       }
       
-      if (response.status === 403 && data.message && data.message.includes('deactivated')) {
+      if (response.status === 403 && !isAuthEndpoint && data.message && data.message.includes('deactivated')) {
         logout();
         Swal.fire({
           icon: 'error',

@@ -30,10 +30,14 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists with this email' });
     }
 
-    // Determine role (Assign admin if secret matches)
+    // Determine role (Assign admin if secret matches, throw error if wrong)
     let role = 'user';
-    if (adminSecretKey && adminSecretKey === process.env.ADMIN_SECRET_KEY) {
-      role = 'admin';
+    if (adminSecretKey) {
+      if (adminSecretKey === process.env.ADMIN_SECRET_KEY) {
+        role = 'admin';
+      } else {
+        return res.status(400).json({ success: false, message: 'Invalid Admin Secret Key' });
+      }
     }
 
     // Create user
