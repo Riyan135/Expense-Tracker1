@@ -2,16 +2,12 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const path = require('path');
-const connectDB = async () => {
-  const db = require('./src/config/db');
-  await db();
-};
+const dotenv = require('dotenv');
 
 // Load env variables
 dotenv.config();
 
-// Connect to Database
-connectDB();
+const connectDB = require('./src/config/db');
 
 const app = express();
 
@@ -21,6 +17,15 @@ app.use(express.urlencoded({ extended: false }));
 
 // Enable CORS
 app.use(cors());
+// Database Connection Middleware for API Routes
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // Mount API Routes
 app.use('/api/auth', require('./src/routes/authRoutes'));
