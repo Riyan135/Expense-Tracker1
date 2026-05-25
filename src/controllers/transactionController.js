@@ -6,7 +6,7 @@ const User = require('../models/User');
 // @access  Private
 const addTransaction = async (req, res) => {
   try {
-    const { type, amount, category, date, description } = req.body;
+    const { type, amount, category, date, description, walletType } = req.body;
 
     if (!type || !amount || !category || !date) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
@@ -18,7 +18,8 @@ const addTransaction = async (req, res) => {
       amount,
       category,
       date,
-      description
+      description,
+      walletType: walletType || 'Cash'
     });
 
     res.status(201).json({
@@ -102,7 +103,7 @@ const getTransactions = async (req, res) => {
 // @access  Private
 const updateTransaction = async (req, res) => {
   try {
-    const { type, amount, category, date, description } = req.body;
+    const { type, amount, category, date, description, walletType } = req.body;
 
     let transaction = await Transaction.findById(req.params.id);
 
@@ -120,6 +121,7 @@ const updateTransaction = async (req, res) => {
     transaction.category = category || transaction.category;
     transaction.date = date || transaction.date;
     transaction.description = description !== undefined ? description : transaction.description;
+    transaction.walletType = walletType || transaction.walletType;
 
     const updatedTransaction = await transaction.save();
 

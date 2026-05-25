@@ -38,6 +38,11 @@ const TransactionSchema = new mongoose.Schema({
     trim: true,
     maxlength: [200, 'Description cannot exceed 200 characters']
   },
+  walletType: {
+    type: String,
+    enum: ['Cash', 'Bank', 'UPI', 'Credit Card'],
+    default: 'Cash'
+  },
   createdAt: {
     type: Date,
     default: Date.now

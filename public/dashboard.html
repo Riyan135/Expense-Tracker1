@@ -207,10 +207,27 @@
             </div>
           </div>
 
-          <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 lg:col-span-3 min-h-[300px]">
+          <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 lg:col-span-3 min-h-[200px]">
             <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Daily Spending Curve (Last 7 Days)</h3>
-            <div class="relative w-full h-full min-h-[220px]">
+            <div class="relative w-full h-full min-h-[150px]">
               <canvas id="weeklyTrendsChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Savings Goals Section -->
+        <section id="savingsGoalsSection" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Savings Goals</h3>
+            <button id="addGoalBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-emerald-600/20 transition flex items-center">
+              <i class="fas fa-plus mr-1.5"></i>New Goal
+            </button>
+          </div>
+          <div id="goalsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Goals cards rendered by JS -->
+            <div class="glass-panel p-6 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center min-h-[160px] text-slate-400 dark:text-slate-500">
+              <i class="fas fa-bullseye text-3xl mb-3 opacity-30"></i>
+              <p class="text-sm">No savings goals yet</p>
             </div>
           </div>
         </section>
@@ -289,6 +306,7 @@
                   <th class="px-6 py-4">Date</th>
                   <th class="px-6 py-4">Type</th>
                   <th class="px-6 py-4">Category</th>
+                  <th class="px-6 py-4">Wallet</th>
                   <th class="px-6 py-4 w-full">Description</th>
                   <th class="px-6 py-4 text-right">Amount</th>
                   <th class="px-6 py-4 text-center">Actions</th>
@@ -297,7 +315,7 @@
               <tbody id="transactionsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-sm">
                 <!-- Populated via dashboard.js -->
                 <tr>
-                  <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                  <td colspan="7" class="px-6 py-12 text-center text-slate-400">
                     <i class="fas fa-spinner animate-spin text-2xl mb-3 text-indigo-500"></i>
                     <p>Loading transactions...</p>
                   </td>
@@ -328,6 +346,15 @@
           </select>
         </div>
         <div>
+          <label for="txWallet" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Wallet / Account</label>
+          <select id="txWallet" class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
+            <option value="Cash">💵 Cash</option>
+            <option value="Bank">🏦 Bank</option>
+            <option value="UPI">📱 UPI</option>
+            <option value="Credit Card">💳 Credit Card</option>
+          </select>
+        </div>
+        <div>
           <label for="txAmount" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Amount (INR)</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm font-medium">₹</span>
@@ -348,8 +375,60 @@
           <label for="txDescription" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Description</label>
           <input type="text" id="txDescription" maxlength="200" class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 transition" placeholder="Details (e.g. Walmart grocieries)">
         </div>
+        <div class="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition cursor-pointer" id="receiptDropZone">
+          <input type="file" id="receiptFileInput" accept="image/*" class="hidden">
+          <div id="receiptPlaceholder">
+            <i class="fas fa-camera text-2xl text-slate-400 dark:text-slate-500 mb-2"></i>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Click to scan a receipt (OCR)</p>
+          </div>
+          <div id="receiptLoading" class="hidden">
+            <i class="fas fa-spinner animate-spin text-2xl text-indigo-500 mb-2"></i>
+            <p class="text-xs text-indigo-500">Scanning receipt...</p>
+          </div>
+          <div id="receiptSuccess" class="hidden">
+            <i class="fas fa-check-circle text-2xl text-emerald-500 mb-2"></i>
+            <p class="text-xs text-emerald-500">Receipt scanned! Check auto-filled fields.</p>
+          </div>
+        </div>
         <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 mt-2 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.01]">
           <i class="fas fa-save mr-2"></i>Save Transaction
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ---------------- SAVINGS GOAL MODAL (ADD/EDIT) ---------------- -->
+  <div id="goalModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+    <div class="w-full max-w-md modal-glass p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-slate-200/50 dark:border-slate-800/40 fade-in">
+      <button class="close-goal-modal-btn absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-lg">
+        <i class="fas fa-times"></i>
+      </button>
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6" id="goalModalTitle">Add Savings Goal</h3>
+      <form id="goalForm" class="space-y-4">
+        <div>
+          <label for="goalName" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Goal Name</label>
+          <input type="text" id="goalName" class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 transition" placeholder="e.g. New Laptop" required>
+        </div>
+        <div>
+          <label for="goalTarget" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Target Amount (INR)</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm font-medium">₹</span>
+            <input type="number" id="goalTarget" step="1" min="1" class="block w-full pl-7 pr-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 transition" placeholder="50000" required>
+          </div>
+        </div>
+        <div>
+          <label for="goalSaved" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Already Saved (INR)</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm font-medium">₹</span>
+            <input type="number" id="goalSaved" step="1" min="0" class="block w-full pl-7 pr-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 transition" placeholder="0" value="0">
+          </div>
+        </div>
+        <div>
+          <label for="goalDeadline" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Target Date (Optional)</label>
+          <input type="date" id="goalDeadline" class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 transition">
+        </div>
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 mt-2 rounded-xl text-sm font-semibold shadow-lg shadow-emerald-600/20 transition-all hover:scale-[1.01]">
+          <i class="fas fa-bullseye mr-2"></i>Save Goal
         </button>
       </form>
     </div>
@@ -360,6 +439,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <!-- Custom Scripts -->
   <script src="js/config.js"></script>

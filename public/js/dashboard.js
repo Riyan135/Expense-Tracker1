@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function refreshDashboard() {
   await fetchStats();
   await fetchTransactions();
+  await fetchSavingsGoals();
 }
 
 // Fetch stats and render cards, progress bar, and charts
@@ -164,7 +165,7 @@ function renderTransactionsTable(transactions) {
   if (transactions.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="5" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">
+        <td colspan="7" class="px-6 py-10 text-center text-slate-500 dark:text-slate-400">
           <div class="flex flex-col items-center justify-center space-y-2">
             <i class="fas fa-receipt text-3xl opacity-35"></i>
             <span>No transactions found. Add a new transaction or modify filters!</span>
@@ -214,6 +215,9 @@ function renderTransactionsTable(transactions) {
           </div>
           <span>${tx.category}</span>
         </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-slate-500 dark:text-slate-400 text-sm">
+        ${tx.walletType || 'Cash'}
       </td>
       <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 max-w-xs truncate">
         ${tx.description || '-'}
@@ -452,6 +456,18 @@ function openAddModal() {
   // Set default date as today
   document.getElementById('txDate').value = formatDateForInput(new Date());
   
+  // Reset receipt upload UI helper
+  const receiptPlaceholder = document.getElementById('receiptPlaceholder');
+  const receiptLoading = document.getElementById('receiptLoading');
+  const receiptSuccess = document.getElementById('receiptSuccess');
+  if (receiptPlaceholder) receiptPlaceholder.classList.remove('hidden');
+  if (receiptLoading) receiptLoading.classList.add('hidden');
+  if (receiptSuccess) receiptSuccess.classList.add('hidden');
+  
+  // Reset wallet selector default
+  const txWallet = document.getElementById('txWallet');
+  if (txWallet) txWallet.value = 'Cash';
+  
   // Toggle categories selector depending on type
   toggleCategoryOptions('expense');
   
@@ -472,6 +488,18 @@ function openEditModal(id) {
   document.getElementById('txCategory').value = tx.category;
   document.getElementById('txDate').value = formatDateForInput(tx.date);
   document.getElementById('txDescription').value = tx.description || '';
+  
+  // Set wallet selector
+  const txWallet = document.getElementById('txWallet');
+  if (txWallet) txWallet.value = tx.walletType || 'Cash';
+  
+  // Reset receipt upload UI helper
+  const receiptPlaceholder = document.getElementById('receiptPlaceholder');
+  const receiptLoading = document.getElementById('receiptLoading');
+  const receiptSuccess = document.getElementById('receiptSuccess');
+  if (receiptPlaceholder) receiptPlaceholder.classList.remove('hidden');
+  if (receiptLoading) receiptLoading.classList.add('hidden');
+  if (receiptSuccess) receiptSuccess.classList.add('hidden');
 
   document.getElementById('transactionModal').classList.remove('hidden');
 }
@@ -527,6 +555,7 @@ function setupForms() {
       const category = document.getElementById('txCategory').value;
       const date = document.getElementById('txDate').value;
       const description = document.getElementById('txDescription').value.trim();
+      const walletType = document.getElementById('txWallet').value;
 
       if (!amount || amount <= 0) {
         return Swal.fire({ icon: 'warning', title: 'Invalid Amount', text: 'Please enter a positive amount' });
@@ -538,7 +567,7 @@ function setupForms() {
         return Swal.fire({ icon: 'warning', title: 'Required field', text: 'Please select a date' });
       }
 
-      const transactionPayload = { type, amount, category, date, description };
+      const transactionPayload = { type, amount, category, date, description, walletType };
 
       try {
         let response;
@@ -578,6 +607,139 @@ function setupForms() {
   const downloadReportBtn = document.getElementById('downloadReportBtn');
   if (downloadReportBtn) {
     downloadReportBtn.addEventListener('click', generatePDFReport);
+  }
+
+  // Hook Description change for auto category detection
+  const txDescription = document.getElementById('txDescription');
+  if (txDescription) {
+    txDescription.addEventListener('input', (e) => {
+      const desc = e.target.value.trim();
+      const cat = detectCategoryFromDescription(desc);
+      if (cat) {
+        const categorySelect = document.getElementById('txCategory');
+        if (categorySelect) {
+          const options = Array.from(categorySelect.options).map(o => o.value);
+          if (options.includes(cat)) {
+            categorySelect.value = cat;
+          }
+        }
+      }
+    });
+  }
+
+  // Receipt OCR File Input Listener
+  const receiptDropZone = document.getElementById('receiptDropZone');
+  const receiptFileInput = document.getElementById('receiptFileInput');
+  const receiptPlaceholder = document.getElementById('receiptPlaceholder');
+  const receiptLoading = document.getElementById('receiptLoading');
+  const receiptSuccess = document.getElementById('receiptSuccess');
+
+  if (receiptDropZone && receiptFileInput) {
+    receiptDropZone.addEventListener('click', () => {
+      receiptFileInput.click();
+    });
+
+    receiptFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      receiptPlaceholder.classList.add('hidden');
+      receiptSuccess.classList.add('hidden');
+      receiptLoading.classList.remove('hidden');
+
+      try {
+        const result = await Tesseract.recognize(file, 'eng', {
+          logger: m => console.log(m)
+        });
+        const text = result.data.text;
+        
+        const amount = parseAmountFromText(text);
+        if (amount) {
+          document.getElementById('txAmount').value = amount;
+        }
+
+        const dateVal = parseDateFromText(text);
+        if (dateVal) {
+          document.getElementById('txDate').value = dateVal;
+        }
+
+        const detected = autoDetectCategoryAndDescription(text);
+        if (detected && detected.description) {
+          document.getElementById('txDescription').value = detected.description;
+          const cat = detectCategoryFromDescription(detected.description);
+          if (cat) {
+            const categorySelect = document.getElementById('txCategory');
+            if (categorySelect) {
+              const options = Array.from(categorySelect.options).map(o => o.value);
+              if (options.includes(cat)) {
+                categorySelect.value = cat;
+              }
+            }
+          }
+        }
+
+        receiptLoading.classList.add('hidden');
+        receiptSuccess.classList.remove('hidden');
+      } catch (err) {
+        console.error('OCR Error:', err);
+        receiptLoading.classList.add('hidden');
+        receiptPlaceholder.classList.remove('hidden');
+        Swal.fire({ icon: 'error', title: 'OCR Scan Failed', text: 'Please ensure image is clear.' });
+      }
+    });
+  }
+
+  // Savings Goal Modal and Form Submit Hooks
+  const addGoalBtn = document.getElementById('addGoalBtn');
+  if (addGoalBtn) addGoalBtn.addEventListener('click', openGoalAddModal);
+
+  const closeGoalBtns = document.querySelectorAll('.close-goal-modal-btn');
+  closeGoalBtns.forEach(btn => btn.addEventListener('click', closeGoalModal));
+
+  const goalForm = document.getElementById('goalForm');
+  if (goalForm) {
+    goalForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('goalName').value.trim();
+      const targetAmount = Number(document.getElementById('goalTarget').value);
+      const savedAmount = Number(document.getElementById('goalSaved').value || 0);
+      const deadline = document.getElementById('goalDeadline').value;
+
+      if (!name || !targetAmount || targetAmount <= 0) {
+        return Swal.fire({ icon: 'warning', title: 'Invalid inputs', text: 'Please fill name and a positive target amount' });
+      }
+
+      const payload = { name, targetAmount, savedAmount, deadline: deadline || undefined };
+
+      try {
+        let response;
+        if (editingGoalId) {
+          response = await apiFetch(`/users/goals/${editingGoalId}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+          });
+        } else {
+          response = await apiFetch('/users/goals', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+        }
+
+        if (response && response.success) {
+          closeGoalModal();
+          Swal.fire({
+            icon: 'success',
+            title: 'Saved',
+            text: response.message || 'Savings goal saved successfully',
+            timer: 1500,
+            showConfirmButton: false
+          });
+          await fetchSavingsGoals();
+        }
+      } catch (error) {
+        Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'Failed to save savings goal' });
+      }
+    });
   }
 }
 
@@ -823,3 +985,344 @@ document.addEventListener('DOMContentLoaded', () => {
   if(addBtnLedger) addBtnLedger.addEventListener('click', () => { window.openAddModal(); });
   if(downBtnSide) downBtnSide.addEventListener('click', () => { window.downloadReport(); if(window.innerWidth < 1024) toggleSidebar(); });
 });
+
+// Expose openEditModal and deletion / goal hooks globally
+window.openAddModal = openAddModal;
+window.openEditModal = openEditModal;
+window.handleDeleteTransaction = handleDeleteTransaction;
+window.downloadReport = generatePDFReport;
+
+// Savings Goal CRUD Global Handlers
+let editingGoalId = null;
+let allGoalsList = [];
+
+async function fetchSavingsGoals() {
+  try {
+    const data = await apiFetch('/users/goals');
+    if (data && data.success) {
+      allGoalsList = data.goals;
+      renderSavingsGoals(data.goals);
+    }
+  } catch (error) {
+    console.error('Error fetching savings goals:', error);
+  }
+}
+
+function renderSavingsGoals(goals) {
+  const container = document.getElementById('goalsContainer');
+  if (!container) return;
+
+  if (!goals || goals.length === 0) {
+    container.innerHTML = `
+      <div class="glass-panel p-6 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center min-h-[160px] text-slate-400 dark:text-slate-500 col-span-full">
+        <i class="fas fa-bullseye text-3xl mb-3 opacity-30"></i>
+        <p class="text-sm">No savings goals yet</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  goals.forEach(goal => {
+    const progress = Math.min((goal.savedAmount / goal.targetAmount) * 100, 100);
+    const progressFormatted = Math.round(progress);
+    
+    let timeEstHtml = '';
+    if (goal.deadline) {
+      const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+      if (daysLeft > 0) {
+        timeEstHtml = `<span class="text-xs text-slate-500 dark:text-slate-400"><i class="far fa-clock mr-1"></i>${daysLeft} days left</span>`;
+      } else if (daysLeft === 0) {
+        timeEstHtml = `<span class="text-xs text-amber-500 font-semibold"><i class="far fa-clock mr-1"></i>Ends today</span>`;
+      } else {
+        timeEstHtml = `<span class="text-xs text-rose-500 font-semibold"><i class="far fa-clock mr-1"></i>Overdue</span>`;
+      }
+    } else {
+      timeEstHtml = `<span class="text-xs text-slate-400">No target date</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 flex flex-col justify-between space-y-4';
+    card.innerHTML = `
+      <div class="flex items-start justify-between">
+        <div>
+          <h4 class="text-base font-bold text-slate-900 dark:text-white">${goal.name}</h4>
+          <p class="text-xs text-slate-500 mt-0.5">Target: ${formatCurrency(goal.targetAmount)}</p>
+        </div>
+        <div class="flex space-x-1">
+          <button onclick="window.openGoalEditModal('${goal._id}')" class="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i class="fas fa-edit text-xs"></i>
+          </button>
+          <button onclick="window.handleDeleteGoal('${goal._id}')" class="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i class="fas fa-trash-alt text-xs"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs font-semibold">
+          <span class="text-slate-700 dark:text-slate-300">Saved: ${formatCurrency(goal.savedAmount)}</span>
+          <span class="text-indigo-600 dark:text-indigo-400">${progressFormatted}%</span>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden shadow-inner">
+          <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500" style="width: ${progress}%"></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/60">
+        ${timeEstHtml}
+        <button onclick="window.quickAddSavings('${goal._id}')" class="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 text-xs font-bold transition flex items-center">
+          <i class="fas fa-plus-circle mr-1"></i>Add Savings
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function openGoalAddModal() {
+  editingGoalId = null;
+  document.getElementById('goalModalTitle').textContent = 'Add Savings Goal';
+  document.getElementById('goalForm').reset();
+  document.getElementById('goalModal').classList.remove('hidden');
+}
+
+function openGoalEditModal(id) {
+  editingGoalId = id;
+  const goal = allGoalsList.find(g => g._id === id);
+  if (!goal) return;
+
+  document.getElementById('goalModalTitle').textContent = 'Edit Savings Goal';
+  document.getElementById('goalName').value = goal.name;
+  document.getElementById('goalTarget').value = goal.targetAmount;
+  document.getElementById('goalSaved').value = goal.savedAmount;
+  document.getElementById('goalDeadline').value = goal.deadline ? formatDateForInput(goal.deadline) : '';
+
+  document.getElementById('goalModal').classList.remove('hidden');
+}
+
+function closeGoalModal() {
+  document.getElementById('goalModal').classList.add('hidden');
+  editingGoalId = null;
+}
+
+async function handleDeleteGoal(id) {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: "Delete this savings goal?",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#64748b',
+    confirmButtonText: 'Yes, delete it!'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const data = await apiFetch(`/users/goals/${id}`, { method: 'DELETE' });
+      if (data && data.success) {
+        Swal.fire({ icon: 'success', title: 'Deleted', text: 'Goal deleted successfully', timer: 1500, showConfirmButton: false });
+        await fetchSavingsGoals();
+      }
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'Failed to delete goal' });
+    }
+  }
+}
+
+async function quickAddSavings(id) {
+  const goal = allGoalsList.find(g => g._id === id);
+  if (!goal) return;
+
+  const { value: amount } = await Swal.fire({
+    title: 'Add Savings',
+    text: `How much would you like to add to "${goal.name}"?`,
+    input: 'number',
+    inputPlaceholder: 'Amount in INR',
+    showCancelButton: true,
+    inputValidator: (value) => {
+      if (!value || isNaN(value) || parseFloat(value) <= 0) {
+        return 'Please enter a valid positive amount!';
+      }
+    }
+  });
+
+  if (amount) {
+    try {
+      const savedAmount = goal.savedAmount + parseFloat(amount);
+      const data = await apiFetch(`/users/goals/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ savedAmount })
+      });
+      if (data && data.success) {
+        Swal.fire({ icon: 'success', title: 'Updated', text: 'Savings added successfully!', timer: 1500, showConfirmButton: false });
+        await fetchSavingsGoals();
+      }
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Error', text: error.message || 'Failed to add savings' });
+    }
+  }
+}
+
+// Global exposure for Savings Goals handlers
+window.openGoalEditModal = openGoalEditModal;
+window.handleDeleteGoal = handleDeleteGoal;
+window.quickAddSavings = quickAddSavings;
+
+// OCR Parser & auto category detection maps
+const autoCategoryMap = {
+  'dominos': 'Food',
+  'pizza': 'Food',
+  'mcdonald': 'Food',
+  'kfc': 'Food',
+  'starbucks': 'Food',
+  'restaurant': 'Food',
+  'cafe': 'Food',
+  'burger': 'Food',
+  'swiggy': 'Food',
+  'zomato': 'Food',
+  'dine': 'Food',
+  'food': 'Food',
+  'uber': 'Travel',
+  'ola': 'Travel',
+  'lyft': 'Travel',
+  'cab': 'Travel',
+  'taxi': 'Travel',
+  'flight': 'Travel',
+  'train': 'Travel',
+  'metro': 'Travel',
+  'irctc': 'Travel',
+  'fuel': 'Travel',
+  'petrol': 'Travel',
+  'diesel': 'Travel',
+  'walmart': 'Shopping',
+  'amazon': 'Shopping',
+  'flipkart': 'Shopping',
+  'myntra': 'Shopping',
+  'target': 'Shopping',
+  'groceries': 'Shopping',
+  'supermarket': 'Shopping',
+  'mall': 'Shopping',
+  'clothing': 'Shopping',
+  'store': 'Shopping',
+  'electricity': 'Bills',
+  'water': 'Bills',
+  'internet': 'Bills',
+  'wifi': 'Bills',
+  'netflix': 'Bills',
+  'spotify': 'Bills',
+  'recharge': 'Bills',
+  'mobile bill': 'Bills',
+  'rent': 'Bills',
+  'pharmacy': 'Health',
+  'hospital': 'Health',
+  'doctor': 'Health',
+  'clinic': 'Health',
+  'medicine': 'Health',
+  'gym': 'Health',
+  'udemy': 'Education',
+  'coursera': 'Education',
+  'tuition': 'Education',
+  'book': 'Education',
+  'school': 'Education',
+  'college': 'Education',
+  'salary': 'Salary',
+  'bonus': 'Salary',
+  'interest': 'Investment',
+  'dividend': 'Investment',
+  'stocks': 'Investment',
+  'refund': 'Gifts',
+  'cashback': 'Gifts'
+};
+
+function checkStoreKeywords(text) {
+  const lowercase = text.toLowerCase();
+  for (const keyword of Object.keys(autoCategoryMap)) {
+    if (lowercase.includes(keyword)) {
+      return keyword.charAt(0).toUpperCase() + keyword.slice(1);
+    }
+  }
+  return null;
+}
+
+function detectCategoryFromDescription(description) {
+  if (!description) return null;
+  const lowercase = description.toLowerCase();
+  for (const [keyword, category] of Object.entries(autoCategoryMap)) {
+    if (lowercase.includes(keyword)) {
+      return category;
+    }
+  }
+  return null;
+}
+
+function parseAmountFromText(text) {
+  const regexes = [
+    /(?:total|amt|amount|net|grand total|rs\.?|inr)\s*:?\s*(?:rs\.?|inr)?\s*([\d,]+\.\d{2})/i,
+    /(?:total|amt|amount|net|grand total|rs\.?|inr)\s*:?\s*(?:rs\.?|inr)?\s*([\d,]+)/i,
+    /([\d,]+\.\d{2})/
+  ];
+
+  for (const regex of regexes) {
+    const match = text.match(regex);
+    if (match) {
+      const val = parseFloat(match[1].replace(/,/g, ''));
+      if (!isNaN(val) && val > 0) {
+        return val;
+      }
+    }
+  }
+  return null;
+}
+
+function parseDateFromText(text) {
+  const dateRegex = /\b(\d{1,4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,4})\b/;
+  const match = text.match(dateRegex);
+  if (match) {
+    let p1 = match[1];
+    let p2 = match[2];
+    let p3 = match[3];
+
+    let year, month, day;
+    if (p1.length === 4) {
+      year = parseInt(p1);
+      month = parseInt(p2);
+      day = parseInt(p3);
+    } else if (p3.length === 4) {
+      year = parseInt(p3);
+      month = parseInt(p2);
+      day = parseInt(p1);
+      if (month > 12 && day <= 12) {
+        const temp = month;
+        month = day;
+        day = temp;
+      }
+    } else {
+      year = 2000 + parseInt(p3);
+      month = parseInt(p2);
+      day = parseInt(p1);
+    }
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+  return formatDateForInput(new Date());
+}
+
+function autoDetectCategoryAndDescription(text) {
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const cleanLine = line.trim();
+    if (cleanLine.length > 3) {
+      const store = checkStoreKeywords(cleanLine);
+      if (store) {
+        return { description: store };
+      }
+    }
+  }
+  if (lines.length > 0 && lines[0].trim().length > 3) {
+    return { description: lines[0].trim().substring(0, 50) };
+  }
+  return null;
+}

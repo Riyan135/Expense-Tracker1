@@ -97,8 +97,83 @@ const changePassword = async (req, res) => {
   }
 };
 
+// @desc    Get all savings goals
+// @route   GET /api/users/goals
+// @access  Private
+const getSavingsGoals = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, goals: user.savingsGoals || [] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Add a savings goal
+// @route   POST /api/users/goals
+// @access  Private
+const addSavingsGoal = async (req, res) => {
+  try {
+    const { name, targetAmount, savedAmount, deadline } = req.body;
+    if (!name || !targetAmount) {
+      return res.status(400).json({ success: false, message: 'Please provide goal name and target amount' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    user.savingsGoals.push({ name, targetAmount, savedAmount: savedAmount || 0, deadline });
+    await user.save();
+    const newGoal = user.savingsGoals[user.savingsGoals.length - 1];
+    res.status(201).json({ success: true, message: 'Goal added successfully', goal: newGoal });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update a savings goal
+// @route   PUT /api/users/goals/:id
+// @access  Private
+const updateSavingsGoal = async (req, res) => {
+  try {
+    const { name, targetAmount, savedAmount, deadline } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const goal = user.savingsGoals.id(req.params.id);
+    if (!goal) return res.status(404).json({ success: false, message: 'Goal not found' });
+    if (name !== undefined) goal.name = name;
+    if (targetAmount !== undefined) goal.targetAmount = targetAmount;
+    if (savedAmount !== undefined) goal.savedAmount = savedAmount;
+    if (deadline !== undefined) goal.deadline = deadline;
+    await user.save();
+    res.json({ success: true, message: 'Goal updated successfully', goal });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete a savings goal
+// @route   DELETE /api/users/goals/:id
+// @access  Private
+const deleteSavingsGoal = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const goal = user.savingsGoals.id(req.params.id);
+    if (!goal) return res.status(404).json({ success: false, message: 'Goal not found' });
+    goal.deleteOne();
+    await user.save();
+    res.json({ success: true, message: 'Goal deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getUserProfile,
   updateUserProfile,
-  changePassword
+  changePassword,
+  getSavingsGoals,
+  addSavingsGoal,
+  updateSavingsGoal,
+  deleteSavingsGoal
 };

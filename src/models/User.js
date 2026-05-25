@@ -36,6 +36,13 @@ const UserSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  savingsGoals: [{
+    name: { type: String, required: true, trim: true },
+    targetAmount: { type: Number, required: true, min: 1 },
+    savedAmount: { type: Number, default: 0, min: 0 },
+    deadline: { type: Date },
+    createdAt: { type: Date, default: Date.now }
+  }],
   createdAt: {
     type: Date,
     default: Date.now
