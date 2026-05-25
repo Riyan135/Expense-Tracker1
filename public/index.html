@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartSpend - Personal Expense Tracker & Budget Manager</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-300">
+
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-50 glass-panel border-b border-slate-200/50 dark:border-slate-800/30 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="bg-indigo-600 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/30">
+        <i class="fas fa-wallet text-lg animate-pulse"></i>
+      </div>
+      <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-300">
+        SmartSpend
+      </span>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <!-- Theme Switcher -->
+      <button class="theme-toggle-btn w-10 h-10 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 transition" aria-label="Toggle Theme">
+        <i class="fas fa-moon text-slate-700 dark:text-slate-300"></i>
+      </button>
+
+      <a href="login.html" class="text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition hidden sm:inline-block">
+        Sign In
+      </a>
+      <a href="register.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02]">
+        Get Started
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <main class="flex-grow flex flex-col justify-center px-6 py-12 lg:py-20 relative overflow-hidden">
+    <!-- Gradient Blobs in background -->
+    <div class="absolute -top-40 -right-40 w-96 h-96 bg-purple-400/20 dark:bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-10 -left-40 w-96 h-96 bg-indigo-400/20 dark:bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-4xl mx-auto text-center z-10 fade-in">
+      <span class="px-4 py-1.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50 uppercase tracking-widest">
+        Smart Financial Assistant
+      </span>
+      
+      <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-6 leading-tight">
+        Take Control of Your <br/>
+        <span class="bg-gradient-to-r from-indigo-600 via-violet-500 to-pink-500 bg-clip-text text-transparent">
+          Personal Expenses
+        </span>
+      </h1>
+
+      <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mt-6 leading-relaxed">
+        Track your incomes, categorize your spending patterns, analyze trends, and stay within your budget limit with clean, automated financial reports.
+      </p>
+
+      <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="register.html" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-xl text-base font-semibold shadow-xl shadow-indigo-600/20 transition-all hover:scale-[1.02] flex items-center justify-center">
+          Start Tracking Now <i class="fas fa-arrow-right ml-2 text-sm"></i>
+        </a>
+        <a href="admin-login.html" class="w-full sm:w-auto glass-panel border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-8 py-4 rounded-xl text-base font-semibold hover:bg-slate-100 dark:hover:bg-slate-900 transition flex items-center justify-center">
+          <i class="fas fa-lock mr-2 text-sm"></i> Admin Portal
+        </a>
+      </div>
+    </div>
+
+    <!-- Feature Grid Section -->
+    <section class="max-w-6xl mx-auto mt-20 sm:mt-32 grid grid-cols-1 md:grid-cols-3 gap-8 z-10">
+      <!-- Feature Card 1 -->
+      <div class="glass-panel p-8 rounded-2xl hover-lift border border-slate-200/50 dark:border-slate-800/30 flex flex-col items-start">
+        <div class="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 p-4 rounded-xl mb-6 shadow-sm">
+          <i class="fas fa-chart-pie text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Visual Analytics</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Monitor your cashflow distributions using interactive weekly/monthly category doughnut charts and comparative bars.
+        </p>
+      </div>
+
+      <!-- Feature Card 2 -->
+      <div class="glass-panel p-8 rounded-2xl hover-lift border border-slate-200/50 dark:border-slate-800/30 flex flex-col items-start">
+        <div class="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 p-4 rounded-xl mb-6 shadow-sm">
+          <i class="fas fa-bell text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Budget Warnings</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Set monthly budgets limits and receive instant alert notifications when your expenditure hits critical thresholds.
+        </p>
+      </div>
+
+      <!-- Feature Card 3 -->
+      <div class="glass-panel p-8 rounded-2xl hover-lift border border-slate-200/50 dark:border-slate-800/30 flex flex-col items-start">
+        <div class="bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 p-4 rounded-xl mb-6 shadow-sm">
+          <i class="fas fa-file-pdf text-xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Report Downloads</h3>
+        <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          Instantly generate and download PDF financial sheets of filtered ledger records with formatting and calculations.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200/50 dark:border-slate-800/30 py-6 text-center text-slate-500 dark:text-slate-400 text-xs">
+    <p>&copy; 2026 SmartSpend. Designed for MCA Professional Project. All Rights Reserved.</p>
+  </footer>
+
+  <!-- Theme utility script -->
+  <script src="js/theme.js"></script>
+</body>
+</html>

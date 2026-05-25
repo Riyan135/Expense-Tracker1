@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - SmartSpend</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Icons & Custom styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-300">
+
+  <!-- Navbar -->
+  <nav class="glass-panel border-b border-slate-200/50 dark:border-slate-800/30 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <div class="bg-indigo-600 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-lg">
+        <i class="fas fa-wallet"></i>
+      </div>
+      <span class="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent dark:from-indigo-400 dark:to-violet-300">
+        SmartSpend
+      </span>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button class="theme-toggle-btn w-9 h-9 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 transition">
+        <i class="fas fa-moon"></i>
+      </button>
+
+      <!-- Profile Link & Initials -->
+      <a href="profile.html" class="flex items-center space-x-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+        <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs" id="userInitials">
+          U
+        </div>
+        <span class="text-xs font-semibold pr-1.5 hidden sm:inline" id="userGreeting">User</span>
+      </a>
+
+      <!-- Logout -->
+      <button id="logoutBtn" class="text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 p-2 text-sm transition" title="Log Out">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8 space-y-8 fade-in">
+
+    <!-- Budget Warning Banner -->
+    <div id="budgetWarningAlert" class="hidden"></div>
+
+    <!-- Cards Section -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Balance Card -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 flex items-center justify-between glow-primary">
+        <div>
+          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Remaining Balance</span>
+          <h3 id="totalBalanceCard" class="text-2xl font-bold text-slate-800 dark:text-white mt-1">₹0.00</h3>
+        </div>
+        <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center text-lg">
+          <i class="fas fa-scale-balanced"></i>
+        </div>
+      </div>
+
+      <!-- Income Card -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 flex items-center justify-between glow-success">
+        <div>
+          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Income</span>
+          <h3 id="totalIncomeCard" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">₹0.00</h3>
+        </div>
+        <div class="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center text-lg">
+          <i class="fas fa-arrow-trend-up"></i>
+        </div>
+      </div>
+
+      <!-- Expense Card -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 flex items-center justify-between glow-danger">
+        <div>
+          <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Expense</span>
+          <h3 id="totalExpenseCard" class="text-2xl font-bold text-rose-600 dark:text-rose-400 mt-1">₹0.00</h3>
+        </div>
+        <div class="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl flex items-center justify-center text-lg">
+          <i class="fas fa-arrow-trend-down"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- Monthly Budget Progress (Client-Side dynamic) -->
+    <section id="budgetProgressSection" class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 hidden">
+      <div class="flex justify-between items-center mb-2">
+        <h4 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Monthly Spending Budget Progress</h4>
+        <span id="budgetProgressText" class="text-xs font-semibold text-slate-700 dark:text-slate-300">0% Used</span>
+      </div>
+      <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2.5">
+        <div id="budgetProgressBar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+      </div>
+    </section>
+
+    <!-- Charts Grid (2 columns on large screens) -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Chart 1: Income vs Expense Monthly bar chart -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 lg:col-span-2 flex flex-col">
+        <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Cashflow Trends (Last 6 Months)</h3>
+        <div class="h-64 relative flex-grow">
+          <canvas id="monthlyCompareChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Expense Breakdown Doughnut -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 flex flex-col">
+        <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Monthly Expenses by Category</h3>
+        <div class="h-64 relative flex-grow flex items-center justify-center">
+          <div id="noCategoryDataMsg" class="text-center text-xs text-slate-400 dark:text-slate-500 hidden flex flex-col items-center">
+            <i class="fas fa-chart-pie text-2xl mb-2 opacity-35"></i>
+            <span>No category data for current month</span>
+          </div>
+          <canvas id="categoryDoughnutChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Line Chart for Weekly Trends (renders day-by-day) -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 lg:col-span-3">
+        <h3 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Daily Spending Curve (Last 7 Days)</h3>
+        <div class="h-44 relative">
+          <canvas id="weeklyTrendsChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ledger & Filter Section -->
+    <section class="glass-panel p-6 rounded-2xl border border-slate-200/50 dark:border-slate-800/30 space-y-6">
+      
+      <!-- Toolbar Header -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 dark:text-white">Transaction Logs</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Search, filter, and audit your expense ledger</p>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <!-- Add record -->
+          <button id="addTransactionBtn" class="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 transition flex items-center justify-center">
+            <i class="fas fa-plus mr-2 text-xs"></i>Add Record
+          </button>
+          
+          <!-- Download report -->
+          <button id="downloadReportBtn" class="flex-1 sm:flex-none glass-panel border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-900 transition flex items-center justify-center">
+            <i class="fas fa-file-pdf mr-2 text-rose-500"></i>Download Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters Row -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+        <!-- Search bar -->
+        <div class="col-span-2 md:col-span-1">
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Search Keywords</label>
+          <div class="relative">
+            <input 
+              type="text" 
+              id="searchQuery" 
+              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-white"
+              placeholder="Description..."
+            >
+          </div>
+        </div>
+
+        <!-- Type Selector -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Type</label>
+          <select 
+            id="filterType"
+            class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-950 dark:text-white"
+          >
+            <option value="all">All Transactions</option>
+            <option value="income">Incomes</option>
+            <option value="expense">Expenses</option>
+          </select>
+        </div>
+
+        <!-- Category Selector -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Category</label>
+          <select 
+            id="filterCategory"
+            class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-950 dark:text-white"
+          >
+            <option value="all">All Categories</option>
+            <!-- Expenses -->
+            <option value="Food">Food</option>
+            <option value="Travel">Travel</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Bills">Bills</option>
+            <option value="Health">Health</option>
+            <option value="Education">Education</option>
+            <option value="Orders">Orders</option>
+            <!-- Incomes -->
+            <option value="Salary">Salary</option>
+            <option value="Business">Business</option>
+            <option value="Investment">Investment</option>
+            <option value="Gifts">Gifts</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Start Date -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">From Date</label>
+          <input 
+            type="date" 
+            id="filterStartDate"
+            class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-950 dark:text-white"
+          >
+        </div>
+
+        <!-- End Date -->
+        <div class="flex items-end space-x-2">
+          <div class="flex-grow">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">To Date</label>
+            <input 
+              type="date" 
+              id="filterEndDate"
+              class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-950 dark:text-white"
+            >
+          </div>
+          <button id="resetFiltersBtn" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 p-2.5 rounded-lg text-xs transition" title="Clear Filters">
+            <i class="fas fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ledger Table (Responsive wrapper) -->
+      <div class="overflow-x-auto rounded-xl border border-slate-150 dark:border-slate-800/40">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-100 dark:border-slate-800/50">
+              <th class="px-6 py-4">Date</th>
+              <th class="px-6 py-4">Type</th>
+              <th class="px-6 py-4">Category</th>
+              <th class="px-6 py-4">Description</th>
+              <th class="px-6 py-4">Amount</th>
+              <th class="px-6 py-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/50 text-sm">
+            <!-- Populated via dashboard.js -->
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                <i class="fas fa-spinner animate-spin mr-2"></i>Loading transactions...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ---------------- TRANSACTION CRUD MODAL (ADD/EDIT) ---------------- -->
+  <div id="transactionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm hidden">
+    <div class="w-full max-w-lg modal-glass p-6 sm:p-8 rounded-2xl shadow-2xl relative border border-slate-200/50 dark:border-slate-800/40 fade-in">
+      
+      <!-- Close modal -->
+      <button class="close-modal-btn absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-lg">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6" id="modalTitle">Add Transaction</h3>
+
+      <form id="transactionForm" class="space-y-4">
+        <!-- Type Selection (Income vs Expense) -->
+        <div>
+          <label for="txType" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-medium">Record Type</label>
+          <select 
+            id="txType"
+            class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-violet-500 text-slate-900 dark:text-white transition"
+          >
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+
+        <!-- Amount -->
+        <div>
+          <label for="txAmount" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-medium font-medium">Amount (INR)</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm font-medium">₹</span>
+            <input 
+              type="number" 
+              id="txAmount" 
+              step="0.01"
+              min="0.01"
+              class="block w-full pl-7 pr-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-violet-500 text-slate-900 dark:text-white transition"
+              placeholder="0.00"
+              required
+            >
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label for="txCategory" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-medium">Category</label>
+          <select 
+            id="txCategory"
+            class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-violet-500 text-slate-900 dark:text-white transition"
+            required
+          >
+            <!-- Populated dynamically through js -->
+          </select>
+        </div>
+
+        <!-- Date -->
+        <div>
+          <label for="txDate" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-medium">Date</label>
+          <input 
+            type="date" 
+            id="txDate"
+            class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-violet-500 text-slate-900 dark:text-white transition"
+            required
+          >
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="txDescription" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5 font-medium">Description</label>
+          <input 
+            type="text" 
+            id="txDescription"
+            maxlength="200"
+            class="block w-full px-3 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 dark:focus:ring-violet-500 text-slate-900 dark:text-white transition"
+            placeholder="Details (e.g. Walmart grocieries)"
+          >
+        </div>
+
+        <!-- Submit Modal -->
+        <button 
+          type="submit" 
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-sm font-semibold shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center hover:scale-[1.01]"
+        >
+          <i class="fas fa-save mr-2"></i>Save Transaction
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="border-t border-slate-200/50 dark:border-slate-800/30 py-6 text-center text-slate-500 dark:text-slate-400 text-xs">
+    <p>&copy; 2026 SmartSpend. Designed for MCA Professional Project.</p>
+  </footer>
+
+  <!-- JavaScript Libraries & Modules -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jsPDF & AutoTable CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Custom Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

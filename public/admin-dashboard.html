@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - SmartSpend</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Icons & Custom styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-300">
+
+  <!-- Navbar -->
+  <nav class="glass-panel border-b border-slate-800/40 px-6 py-4 flex items-center justify-between sticky top-0 z-40 bg-slate-950/80">
+    <div class="flex items-center space-x-3">
+      <div class="bg-indigo-600 text-white w-9 h-9 rounded-xl flex items-center justify-center shadow-lg">
+        <i class="fas fa-shield-halved animate-pulse"></i>
+      </div>
+      <span class="text-lg font-bold bg-gradient-to-r from-indigo-400 to-violet-300 bg-clip-text text-transparent">
+        SmartSpend Admin
+      </span>
+    </div>
+
+    <div class="flex items-center space-x-4">
+      <button class="theme-toggle-btn w-9 h-9 rounded-xl flex items-center justify-center bg-slate-800 hover:bg-slate-700 transition">
+        <i class="fas fa-moon text-slate-300"></i>
+      </button>
+
+      <!-- Logout -->
+      <button onclick="logout()" class="text-slate-400 hover:text-rose-400 p-2 text-sm transition" title="Log Out">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8 space-y-8 fade-in">
+    <!-- Greeting Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-slate-800/40 gap-3">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-white" id="adminGreeting">System Admin Dashboard</h1>
+        <p class="text-xs text-slate-400 mt-1">Real-time system-wide analytics, user control, and audit logs</p>
+      </div>
+      
+      <button onclick="refreshAdminDashboard()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700/50 text-slate-300 px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center">
+        <i class="fas fa-arrows-rotate mr-2"></i>Refresh Console
+      </button>
+    </div>
+
+    <!-- Stats Cards -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Users Card -->
+      <div class="glass-panel p-5 rounded-2xl border border-slate-800/30 flex items-center justify-between bg-slate-950/40">
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Users</span>
+          <h3 id="totalUsersCard" class="text-xl sm:text-2xl font-bold text-white mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 bg-indigo-950/40 text-indigo-400 rounded-lg flex items-center justify-center text-md border border-indigo-900/30">
+          <i class="fas fa-users"></i>
+        </div>
+      </div>
+
+      <!-- Transactions Count -->
+      <div class="glass-panel p-5 rounded-2xl border border-slate-800/30 flex items-center justify-between bg-slate-950/40">
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Transactions</span>
+          <h3 id="totalTransactionsCard" class="text-xl sm:text-2xl font-bold text-white mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 bg-cyan-950/40 text-cyan-400 rounded-lg flex items-center justify-center text-md border border-cyan-900/30">
+          <i class="fas fa-file-invoice-dollar"></i>
+        </div>
+      </div>
+
+      <!-- System Volume -->
+      <div class="glass-panel p-5 rounded-2xl border border-slate-800/30 flex items-center justify-between bg-slate-950/40">
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">System Volume</span>
+          <h3 id="totalVolumeCard" class="text-xl sm:text-2xl font-bold text-white mt-1">₹0.00</h3>
+        </div>
+        <div class="w-10 h-10 bg-emerald-950/40 text-emerald-400 rounded-lg flex items-center justify-center text-md border border-emerald-900/30">
+          <i class="fas fa-chart-line"></i>
+        </div>
+      </div>
+
+      <!-- Avg Transaction Size -->
+      <div class="glass-panel p-5 rounded-2xl border border-slate-800/30 flex items-center justify-between bg-slate-950/40">
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Avg Transaction Size</span>
+          <h3 id="avgTxSizeCard" class="text-xl sm:text-2xl font-bold text-white mt-1">₹0.00</h3>
+        </div>
+        <div class="w-10 h-10 bg-purple-950/40 text-purple-400 rounded-lg flex items-center justify-center text-md border border-purple-900/30">
+          <i class="fas fa-wallet"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visual Reports (Charts) -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Chart 1: Global Category breakdown -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800/30 bg-slate-950/40 lg:col-span-2 flex flex-col">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">System-wide Expense Categories Distribution</h3>
+        <div class="h-64 relative flex-grow">
+          <canvas id="systemCategoryChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Active vs Inactive user ratio -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800/30 bg-slate-950/40 flex flex-col">
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">User Status Ratio</h3>
+        <div class="h-64 relative flex-grow">
+          <canvas id="usersStatusChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Admin Ledger Layout (Grid: Users vs Transactions) -->
+    <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      
+      <!-- Column 1: User Account Controls -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800/30 bg-slate-950/40 xl:col-span-1 space-y-4">
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">User Account Controls</h3>
+          <p class="text-[10px] text-slate-400 mt-0.5">Audit user directories and toggle access permissions</p>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-800/40">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 text-slate-400 uppercase text-[9px] font-bold tracking-wider border-b border-slate-800">
+                <th class="px-4 py-3">Username</th>
+                <th class="px-4 py-3">Email</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody" class="divide-y divide-slate-800/50 text-xs">
+              <!-- Populated via admin.js -->
+              <tr>
+                <td colspan="4" class="px-4 py-6 text-center text-slate-500">
+                  <i class="fas fa-spinner animate-spin mr-2"></i>Loading accounts...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Column 2: System Audit Ledger -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800/30 bg-slate-950/40 xl:col-span-2 space-y-4">
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Master System Ledger</h3>
+          <p class="text-[10px] text-slate-400 mt-0.5">Real-time log auditing for all transaction activities</p>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-slate-800/40">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 text-slate-400 uppercase text-[9px] font-bold tracking-wider border-b border-slate-800">
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">User</th>
+                <th class="px-4 py-3">Type</th>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">Description</th>
+                <th class="px-4 py-3">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="adminTransactionsTableBody" class="divide-y divide-slate-800/50 text-xs">
+              <!-- Populated via admin.js -->
+              <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-slate-500">
+                  <i class="fas fa-spinner animate-spin mr-2"></i>Loading ledger...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800/40 py-6 text-center text-slate-600 text-xs bg-slate-950/50">
+    <p>&copy; 2026 SmartSpend Admin Panel. Built for MCA Project Audits.</p>
+  </footer>
+
+  <!-- Admin dashboard dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script src="js/config.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
